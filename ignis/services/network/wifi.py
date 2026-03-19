@@ -1,8 +1,6 @@
-from gi.repository import GObject, GLib  # type: ignore
-from ignis.gobject import IgnisGObject
+from ignis.gobject import IgnisGObject, IgnisProperty, IgnisSignal
 from ._imports import NM
 from .wifi_device import WifiDevice
-from .util import get_devices
 
 
 class Wifi(IgnisGObject):
@@ -13,47 +11,51 @@ class Wifi(IgnisGObject):
     def __init__(self, client: NM.Client):
         super().__init__()
         self._client = client
-        self._devices: list[WifiDevice] = []
-        self._client.connect(
-            "notify::all-devices",
-            lambda *args: GLib.timeout_add_seconds(1, self.__sync),
-        )
+        self._devices: dict[NM.Device, WifiDevice] = {}
+
         self._client.connect(
             "notify::wireless-enabled",
             lambda *args: self.notify_list("enabled", "icon-name", "is-connected"),
         )
-        self.__sync()
+        self._client.connect("device-added", self.__add_device)
+        self._client.connect("device-removed", self.__remove_device)
 
-    @GObject.Property
+        for device in self._client.get_devices():
+            self.__add_device(None, device, False)
+
+    @IgnisSignal
+    def new_device(self, device: WifiDevice):
+        """
+        Emitted when a new Wi-FI device is added.
+
+        Args:
+            device: An instance of the device.
+        """
+
+    @IgnisProperty
     def devices(self) -> list[WifiDevice]:
         """
-        - read-only
-
         A list of Wi-Fi devices.
         """
-        return self._devices
+        return list(self._devices.values())
 
-    @GObject.Property
+    @IgnisProperty
     def is_connected(self) -> bool:
         """
-        - read-only
-
         Whether at least one Wi-Fi device is connected to the network.
         """
-        for i in self._devices:
+        for i in self.devices:
             if i.is_connected:
                 return True
         return False
 
-    @GObject.Property
+    @IgnisProperty
     def icon_name(self) -> str:
         """
-        - read-only
-
         The icon name of the first device in the list.
         """
         result = None
-        for i in self._devices:
+        for i in self.devices:
             if i.ap.icon_name != "network-wireless-offline-symbolic":
                 result = i.ap.icon_name
 
@@ -62,11 +64,9 @@ class Wifi(IgnisGObject):
         else:
             return result
 
-    @GObject.Property
+    @IgnisProperty
     def enabled(self) -> bool:
         """
-        - read-write
-
         Whether Wi-Fi is enabled.
         """
         return self._client.wireless_get_enabled()
@@ -75,21 +75,32 @@ class Wifi(IgnisGObject):
     def enabled(self, value: bool) -> None:
         self._client.wireless_set_enabled(value)
 
-    def __sync(self) -> None:
-        self._devices = []
-        for device in get_devices(self._client, NM.DeviceType.WIFI):
-            self.__add_device(device)  # type: ignore
+    def __add_device(self, client, device: NM.Device, emit: bool = True) -> None:
+        if device.get_device_type() != NM.DeviceType.WIFI:
+            return
 
-        self.notify_all()
-
-    def __add_device(self, device: NM.DeviceWifi) -> None:
-        dev = WifiDevice(device, self._client)
-        dev.ap.connect(
+        obj = WifiDevice(device, self._client)  # type: ignore
+        obj.ap.connect(
             "notify::icon-name",
             lambda x, y: self.notify("icon-name"),
         )
-        dev.ap.connect(
+        obj.ap.connect(
             "notify::is-connected",
             lambda x, y: self.notify("is-connected"),
         )
-        self._devices.append(dev)
+        self._devices[device] = obj
+
+        if emit:
+            self.emit("new-device", obj)
+            self.notify("devices")
+
+    def __remove_device(self, client, device: NM.Device) -> None:
+        if device.get_device_type() != NM.DeviceType.WIFI:
+            return
+
+        try:
+            obj = self._devices.pop(device)
+            obj.emit("removed")
+            self.notify("devices")
+        except KeyError:
+            pass

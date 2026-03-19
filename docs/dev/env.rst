@@ -1,74 +1,43 @@
 Setting up a Development Environment
 =====================================
 
-Clone repository
--------------------
+This guide with walk you through process of setting up a Development Environment for working on Ignis.
+
+Source
+------
+
+Firstly, you have to grab the Ignis sources:
 
 .. code-block:: bash
 
-    git clone https://github.com/linkfrg/ignis.git
+    # replace with the actual URL of your fork (if needed)
+    git clone https://github.com/ignis-sh/ignis.git
     cd ignis
 
-Update submodules
-------------------
+Virtual Environment
+-------------------
 
-.. code-block:: bash
-
-    git submodule update --init --recursive
-
-Create Python Virtual Environment
-----------------------------------
+It's always a good practice to work within a Python virtual environment.
 
 .. code-block:: bash
 
     python -m venv venv
+    source venv/bin/activate  # for fish: . venv/bin/activate.fish
 
-Activate Virtual Environment
-----------------------------
+Editable install
+----------------
 
-- For Bash:
+Editable installs let you modify the source code directly in the repository
+and the changes take effect immediately without reinstalling the package.
 
-.. code-block:: bash
-
-    source venv/bin/activate
-
-- For Fish:
-
-.. code-block:: fish
-
-    . venv/bin/activate.fish
-
-Install dependencies to Virtual Environment
--------------------------------------------
-
-Common dependencies:
+You can install Ignis in editable mode using ``pip`` with ``-e`` flag:
 
 .. code-block:: bash
 
-    pip install --upgrade -r requirements.txt
+    pip install -e .
 
-Development dependencies:
-
-.. code-block:: bash
-
-    pip install --upgrade -r dev.txt
-
-
-Build and Install Ignis to Virtual Environment
-----------------------------------------------
+Additionally, you can install useful development tools by running:
 
 .. code-block:: bash
 
-    meson setup build --prefix=$(pwd)/venv --libdir "lib/ignis"
-    meson compile -C build
-    meson install -C build
-
-Make a symbolic link to Ignis sources
--------------------------------------
-
-Replace ``python3.12`` with actual version of python.
-
-.. code-block:: bash
-    
-    rm -R venv/lib/python3.12/site-packages/ignis
-    ln -sf $(pwd)/ignis venv/lib/python3.12/site-packages/ignis
+    pip install -r dev.txt

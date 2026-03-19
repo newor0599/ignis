@@ -1,23 +1,29 @@
-from gi.repository import Gtk, GObject  # type: ignore
+from gi.repository import Gtk  # type: ignore
 from ignis.base_widget import BaseWidget
-from ignis.app import IgnisApp
+from ignis.window_manager import WindowManager
+from ignis.exceptions import WindowNotFoundError
+from ignis.gobject import IgnisProperty
 
-app = IgnisApp.get_default()
+window_manager = WindowManager.get_default()
 
 
 class RegularWindow(Gtk.Window, BaseWidget):
     """
     Bases: :class:`Gtk.Window`
 
-    A standart application window.
+    A standard application window.
+
+    Args:
+        namespace: The name of the window, used for accessing it from the CLI and :class:`~ignis.app.IgnisApp`. It must be unique.
+        **kwargs: Properties to set.
 
     .. code-block:: python
 
-        Widget.RegularWindow(
-            child=Widget.Label(label="this is regular window"),
+        widgets.RegularWindow(
+            child=widgets.Label(label="this is regular window"),
             title="This is title",
             namespace='some-regular-window',
-            titlebar=Widget.HeaderBar(show_title_buttons=True),
+            titlebar=widgets.HeaderBar(show_title_buttons=True),
         )
     """
 
@@ -30,14 +36,32 @@ class RegularWindow(Gtk.Window, BaseWidget):
 
         self._namespace = namespace
 
-        app.add_window(namespace, self)
+        window_manager.add_window(namespace, self)
 
-    @GObject.Property
+        self.connect("close-request", self.__on_close_request)
+
+    @IgnisProperty
     def namespace(self) -> str:
         """
-        - required, read-only
-
         The name of the window, used for accessing it from the CLI and :class:`~ignis.app.IgnisApp`.
         It must be unique.
         """
         return self._namespace
+
+    def __remove(self, *args) -> None:
+        try:
+            window_manager.remove_window(self.namespace)
+        except WindowNotFoundError:
+            pass
+
+    def __on_close_request(self, *args) -> None:
+        if not self.props.hide_on_close:
+            self.__remove()
+
+    def destroy(self):
+        self.__remove()
+        return super().destroy()
+
+    def unrealize(self):
+        self.__remove()
+        return super().unrealize()

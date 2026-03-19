@@ -19,7 +19,6 @@ from .file_chooser_button import FileChooserButton
 from .file_filter import FileFilter
 from .file_dialog import FileDialog
 from .grid import Grid
-from .menuitem import MenuItem
 from .popover_menu import PopoverMenu
 from .eventbox import EventBox
 from .headerbar import HeaderBar
@@ -32,8 +31,17 @@ from .overlay import Overlay
 from .arrow import Arrow
 from .arrow_button import ArrowButton
 from .revealer_window import RevealerWindow
+from .stack import Stack
+from .stack_switcher import StackSwitcher
+from .stack_page import StackPage
+from .fixed import Fixed, FixedChild
+from ignis._deprecation import deprecated_getattribute
+from .corner import Corner
 
 
+@deprecated_getattribute(
+    """The "Widget" class is deprecated, please use "from ignis import widgets" instead."""
+)
 class Widget:
     Window: TypeAlias = Window
     Label: TypeAlias = Label
@@ -52,9 +60,9 @@ class Widget:
     RegularWindow: TypeAlias = RegularWindow
     FileChooserButton: TypeAlias = FileChooserButton
     FileFilter: TypeAlias = FileFilter
+    Fixed = Fixed
     Grid: TypeAlias = Grid
     PopoverMenu: TypeAlias = PopoverMenu
-    MenuItem: TypeAlias = MenuItem
     EventBox: TypeAlias = EventBox
     FileDialog: TypeAlias = FileDialog
     HeaderBar: TypeAlias = HeaderBar
@@ -68,3 +76,49 @@ class Widget:
     Arrow: TypeAlias = Arrow
     ArrowButton: TypeAlias = ArrowButton
     RevealerWindow: TypeAlias = RevealerWindow
+    Stack: TypeAlias = Stack
+    StackSwitcher: TypeAlias = StackSwitcher
+    StackPage = StackPage
+    Corner: TypeAlias = Corner
+
+
+__all__ = [
+    "Arrow",
+    "ArrowButton",
+    "Box",
+    "Button",
+    "Calendar",
+    "CenterBox",
+    "CheckButton",
+    "Corner",
+    "DropDown",
+    "Entry",
+    "EventBox",
+    "FileChooserButton",
+    "FileDialog",
+    "FileFilter",
+    "Fixed",
+    "FixedChild",
+    "Grid",
+    "HeaderBar",
+    "Icon",
+    "Label",
+    "ListBox",
+    "ListBoxRow",
+    "Overlay",
+    "Picture",
+    "PopoverMenu",
+    "RegularWindow",
+    "Revealer",
+    "RevealerWindow",
+    "Scale",
+    "Scroll",
+    "Separator",
+    "SpinButton",
+    "Stack",
+    "StackPage",
+    "StackSwitcher",
+    "Switch",
+    "ToggleButton",
+    "Window",
+]

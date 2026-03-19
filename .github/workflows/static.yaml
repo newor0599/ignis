@@ -1,11 +1,16 @@
 on: 
   push:
+    branches:
+      - main
     paths:
       - "ignis/**"
+      - "examples/**"
       - ".github/workflows/static.yaml"
   pull_request:
     paths:
       - "ignis/**"
+      - "examples/**"
+      - ".github/workflows/static.yaml"
 
 name: Static Analysis
 jobs:
@@ -18,17 +23,19 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: 'pip'
 
       - name: Install system dependencies
-        run: |
-          sudo apt update
-          sudo apt install libgirepository1.0-dev gcc libcairo2-dev pkg-config python3-dev gir1.2-gtk-4.0
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: libcairo2-dev
+          version: 1.0
       
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r dev.txt
-          pip install -r requirements.txt
+          grep -vE "PyGObject|setuptools" requirements.txt | pip install -r /dev/stdin
 
       - name: Run mypy analysis
         run: |
@@ -43,14 +50,15 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: 'pip'
+
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install ruff
 
       - name: Check code
-        run:
-          ruff check ignis/
+        run: ruff check
 
       - name: Check format
-        run: ruff format ignis/ --check
+        run: ruff format --check
